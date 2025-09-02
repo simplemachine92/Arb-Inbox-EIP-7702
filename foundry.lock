@@ -4,5 +4,11 @@
       "name": "v1.10.0",
       "rev": "8bbcf6e3f8f62f419e5429a0bd89331c85c37824"
     }
+  },
+  "lib/nitro-contracts": {
+    "tag": {
+      "name": "v3.1.1",
+      "rev": "11a59629c472e16644c9f536cdb8a91b00685f32"
+    }
   }
 }
