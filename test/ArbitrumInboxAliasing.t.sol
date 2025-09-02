@@ -10,8 +10,8 @@ import {SimpleDelegateContract} from "../src/SimpleDelegateContract.sol";
 
 /**
  * @title ArbitrumInboxAliasingWithAA
- * @notice Basic test suite to verify account setup without requiring mainnet fork
- * @dev This test verifies that our account setup works correctly before testing against real contract
+ * @notice Basic test suite to show how EIP-7702 Code setting for EOA's can be interpreted by Arbs Inbox
+ * @dev Simply showcasing that aliasing occurs for a code-executing transaction to an EOA. Neat!
  */
 contract ArbitrumInboxAliasingWithAA is Test {
     // IBridge mimic event
@@ -42,9 +42,6 @@ contract ArbitrumInboxAliasingWithAA is Test {
     // The contract that Alice will delegate execution to.
     SimpleDelegateContract public implementation;
 
-    /**
-     * @notice Set up test environment with test accounts (no fork needed)
-     */
     function setUp() public {
         // Fork setup
         string memory MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
