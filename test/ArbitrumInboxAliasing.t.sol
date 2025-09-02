@@ -11,7 +11,7 @@ import {SimpleDelegateContract} from "../src/SimpleDelegateContract.sol";
 /**
  * @title ArbitrumInboxAliasingWithAA
  * @notice Basic test suite to show how EIP-7702 Code setting for EOA's can be interpreted by Arbs Inbox
- * @dev Simply showcasing that aliasing occurs for a code-executing transaction to an EOA. Neat!
+ * @dev Showcases that aliasing occurs for accounts that have "set their code" via 7702 with multiple tx types.
  */
 contract ArbitrumInboxAliasingWithAA is Test {
     // IBridge mimic event
@@ -72,7 +72,97 @@ contract ArbitrumInboxAliasingWithAA is Test {
         vm.label(address(arbitrumInbox), "ARB INBOX");
     }
 
-    function test_DelegatedInboxCall() public {
+    // Demonstrates how a user who has set their account code will be aliased, even with a normal EOA originating tx.
+    function test_InboxCallNormalTransferWithCodeSet() public {
+        // We still want to include signing and attaching a delegation to show differences.
+        // Alice signs and attaches the delegation in one step (eliminating the need for separate signing).
+        vm.signAndAttachDelegation(address(implementation), ALICE_PK);
+
+        // Verify that Alice's account now behaves as a smart contract.
+        bytes memory code = address(ALICE_ADDRESS).code;
+        require(code.length > 0, "no code written to Alice");
+
+        // Setup to broadcast the delegated call
+        vm.deal(ALICE_ADDRESS, 1 ether);
+
+        // Apply aliasing to compare emitted event
+        address expectedSender = applyL1ToL2Alias(address(ALICE_ADDRESS));
+
+        // Record all logs
+        vm.recordLogs();
+
+        // Non-delegated call but with 7702 code set
+        vm.prank(ALICE_ADDRESS);
+        arbitrumInbox.depositEth{value: 1 ether}();
+
+        // Get the logs and check manually
+        Vm.Log[] memory logs = vm.getRecordedLogs();
+
+        bool found = false;
+        for (uint256 i = 0; i < logs.length; i++) {
+            // Check if this is the MessageDelivered event
+            if (
+                logs[i].topics[0]
+                    == keccak256("MessageDelivered(uint256,bytes32,address,uint8,address,bytes32,uint256,uint64)")
+            ) {
+                // Decode the data to get the sender
+                (,, address sender,,,) = abi.decode(logs[i].data, (address, uint8, address, bytes32, uint256, uint64));
+
+                // Check only the sender
+                if (sender == expectedSender) {
+                    found = true;
+                    console.log("Found event with correct sender:", sender);
+                    break;
+                }
+            }
+        }
+
+        // Assert we found the log or throw
+        assertTrue(found, "Event with expected sender not found");
+
+        // Alice technically has "code" at her address during this flow, so her address on L2 was aliased.
+        assertNotEq(ALICE_ADDRESS, expectedSender);
+
+        /* === Second Transaction to confirm forge isn't setting for single transactions === */
+
+        // Try a subsequent transaction to make sure forge isn't just doing one-offs
+        vm.deal(ALICE_ADDRESS, 1 ether);
+
+        // Trying broadcast in this second tx to see if there are any diffs in behavior.
+        vm.broadcast(ALICE_ADDRESS);
+        arbitrumInbox.depositEth{value: 1 ether}();
+
+        // Get the logs and check manually
+        Vm.Log[] memory logs2 = vm.getRecordedLogs();
+
+        bool found2 = false;
+        for (uint256 i = 0; i < logs.length; i++) {
+            // Check if this is the MessageDelivered event
+            if (
+                logs2[i].topics[0]
+                    == keccak256("MessageDelivered(uint256,bytes32,address,uint8,address,bytes32,uint256,uint64)")
+            ) {
+                // Decode the data to get the sender
+                (,, address sender,,,) = abi.decode(logs2[i].data, (address, uint8, address, bytes32, uint256, uint64));
+
+                // Check only the sender
+                if (sender == expectedSender) {
+                    found2 = true;
+                    console.log("Found event with correct sender:", sender);
+                    break;
+                }
+            }
+        }
+
+        // Assert we found the log or throw
+        assertTrue(found2, "Event with expected sender not found");
+
+        // Alice technically has "code" at her address during this flow, so her address on L2 was aliased.
+        assertNotEq(ALICE_ADDRESS, expectedSender);
+    }
+
+    // Demonstrates how a user who has set their account code, and uses AA tx (code executing) will be aliased (expected).
+    function test_DelegatedInboxCallWithCodeSet() public {
         // Alice signs and attaches the delegation in one step (eliminating the need for separate signing).
         vm.signAndAttachDelegation(address(implementation), ALICE_PK);
 
