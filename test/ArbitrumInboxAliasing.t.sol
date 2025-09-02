@@ -42,6 +42,10 @@ contract ArbitrumInboxAliasingWithAA is Test {
     // The contract that Alice will delegate execution to.
     SimpleDelegateContract public implementation;
 
+    /**
+     * @notice Sets up the test environment with mainnet fork and test accounts
+     * @dev Creates a mainnet fork, initializes test accounts, deploys contracts, and sets up labels
+     */
     function setUp() public {
         // Fork setup
         string memory MAINNET_RPC_URL = vm.envString("MAINNET_RPC_URL");
@@ -72,7 +76,11 @@ contract ArbitrumInboxAliasingWithAA is Test {
         vm.label(address(arbitrumInbox), "ARB INBOX");
     }
 
-    // Demonstrates how a user who has set their account code will be aliased, even with a normal EOA originating tx.
+    /**
+     * @notice Tests that EOA with EIP-7702 code delegation gets aliased even with normal transactions
+     * @dev Demonstrates how a user who has set their account code will be aliased, even with a normal EOA originating tx.
+     *      Verifies that Alice's address is aliased when depositing ETH to Arbitrum Inbox after setting delegation code.
+     */
     function test_InboxCallNormalTransferWithCodeSet() public {
         // We still want to include signing and attaching a delegation to show differences.
         // Alice signs and attaches the delegation in one step (eliminating the need for separate signing).
@@ -161,7 +169,11 @@ contract ArbitrumInboxAliasingWithAA is Test {
         assertNotEq(ALICE_ADDRESS, expectedSender);
     }
 
-    // Demonstrates how a user who has set their account code, and uses AA tx (code executing) will be aliased (expected).
+    /**
+     * @notice Tests that EOA with EIP-7702 code delegation gets aliased when executing delegated calls
+     * @dev Demonstrates how a user who has set their account code, and uses AA tx (code executing) will be aliased (expected).
+     *      Verifies that Alice's address is aliased when making delegated calls to Arbitrum Inbox through the delegation contract.
+     */
     function test_DelegatedInboxCallWithCodeSet() public {
         // Alice signs and attaches the delegation in one step (eliminating the need for separate signing).
         vm.signAndAttachDelegation(address(implementation), ALICE_PK);
