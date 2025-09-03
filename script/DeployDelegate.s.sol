@@ -11,7 +11,7 @@ import {SimpleSafeDelegateContract} from "../src/SimpleSafeDelegateContract.sol"
  * @notice Deploys a SimpleSafeDelegateContract for use with EIP-7702 delegation
  * @dev This script deploys the implementation contract that an EOA can delegate to via EIP-7702.
  *      After deployment, use the JavaScript delegation script to perform the actual EIP-7702 delegation.
- * 
+ *
  * Usage:
  *   1. Set PRIVATE_KEY and SEPOLIA_RPC_URL in .env
  *   2. Run: forge script script/DeployDelegate.s.sol:DeployDelegateScript --rpc-url sepolia --broadcast
@@ -24,7 +24,7 @@ contract DeployDelegateScript is Script {
 
     /// @notice EOA address derived from the private key in environment variables
     address public userAddress;
-    
+
     /// @notice Private key loaded from PRIVATE_KEY environment variable
     uint256 public userPrivateKey;
 
@@ -53,7 +53,7 @@ contract DeployDelegateScript is Script {
 
         // Deploy the implementation contract for EIP-7702 delegation
         implementation = new SimpleSafeDelegateContract();
-        
+
         console.log("SimpleSafeDelegateContract deployed successfully!");
         console.log("Implementation Address:", address(implementation));
         console.log("");

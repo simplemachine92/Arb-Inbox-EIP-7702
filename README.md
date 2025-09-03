@@ -11,13 +11,31 @@ EOA with EIP-7702 code → gets treated like a smart contract → address gets a
 
 ```bash
 cp .env.example .env
-# Add your mainnet RPC URL to .env
+# Fill in your RPC URLs and testnet private key
+npm install
 ```
 
-## Run
+## Run Tests
 
 ```bash
 forge test -v
+```
+
+## EIP-7702 Delegation (Live Testnet)
+
+Deploy implementation contract:
+```bash
+source .env && forge script --chain sepolia script/DeployDelegate.s.sol:DeployDelegateScript --rpc-url sepolia --broadcast
+```
+
+Add the deployed address to `.env` as `IMPLEMENTATION_ADDRESS`, then delegate:
+```bash
+source .env && node delegation/delegate.js
+```
+
+Verify delegation worked:
+```bash
+source .env && node delegation/delegate.js --verify-only
 ```
 
 ## The point

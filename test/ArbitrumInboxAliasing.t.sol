@@ -21,8 +21,7 @@ contract ArbitrumInboxAliasingWithAA is Test {
     uint256 mainnetFork;
 
     /// @notice Real Arbitrum Inbox contract address on Ethereum mainnet
-    address public constant ARBITRUM_INBOX_ADDRESS =
-        0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f;
+    address public constant ARBITRUM_INBOX_ADDRESS = 0x4Dbd4fc535Ac27206064B68FfCf827b0A60BAB3f;
 
     /// @notice Interface to the real Arbitrum Inbox contract
     IInbox public arbitrumInbox;
@@ -59,9 +58,7 @@ contract ArbitrumInboxAliasingWithAA is Test {
             console.log("=== Mainnet Fork Active ===");
             console.log("Arbitrum Inbox Address:", ARBITRUM_INBOX_ADDRESS);
         } else {
-            console.log(
-                "=== Warning: Arbitrum Inbox contract not found on fork ==="
-            );
+            console.log("=== Warning: Arbitrum Inbox contract not found on fork ===");
         }
 
         // Labels for brevity
@@ -94,10 +91,7 @@ contract ArbitrumInboxAliasingWithAA is Test {
         // Using this method since "sender" in MessageDelivered seems to always be aliased.
         // This gives us the emitted "destination" according to Inbox
         vm.expectEmit(false, false, false, true);
-        emit InboxMessageDelivered(
-            0,
-            abi.encodePacked(expectedSender, uint256(1 ether))
-        );
+        emit InboxMessageDelivered(0, abi.encodePacked(expectedSender, uint256(1 ether)));
 
         // Second param ensures that tx.origin == msg.sender, which is the other check in Inbox besides code length
         vm.prank(ALICE_ADDRESS, ALICE_ADDRESS);
@@ -123,8 +117,7 @@ contract ArbitrumInboxAliasingWithAA is Test {
 
         // "Delegated" call to inbox (this would sometimes come from other authorized EOS etc)
         // in this case just executing Alice's own code by Alice
-        SimpleDelegateContract.Call[]
-            memory calls = new SimpleDelegateContract.Call[](1);
+        SimpleDelegateContract.Call[] memory calls = new SimpleDelegateContract.Call[](1);
         calls[0] = SimpleDelegateContract.Call({
             to: payable(address(arbitrumInbox)),
             data: abi.encodeWithSelector(arbitrumInbox.depositEth.selector),
@@ -138,10 +131,7 @@ contract ArbitrumInboxAliasingWithAA is Test {
         // Using this method since "sender" in MessageDelivered seems to always be aliased.
         // This gives us the emitted "destination" according to Inbox
         vm.expectEmit(false, false, false, true);
-        emit InboxMessageDelivered(
-            0,
-            abi.encodePacked(expectedSender, uint256(1 ether))
-        );
+        emit InboxMessageDelivered(0, abi.encodePacked(expectedSender, uint256(1 ether)));
 
         // Call the inbox via delegated call
         // 7702: "All code executing operations must load and execute the code pointed to by the delegation."
@@ -163,10 +153,7 @@ contract ArbitrumInboxAliasingWithAA is Test {
         // Our packed data here follows the depositEth() functions 'abi.encodePacked(dest, msg.value)'
         // Using this method since "sender" in MessageDelivered seems to always be aliased.
         vm.expectEmit(false, false, false, true);
-        emit InboxMessageDelivered(
-            0,
-            abi.encodePacked(ALICE_ADDRESS, uint256(1 ether))
-        );
+        emit InboxMessageDelivered(0, abi.encodePacked(ALICE_ADDRESS, uint256(1 ether)));
 
         // Non-delegated call but with 7702 code set
         // Second param ensures that tx.origin == msg.sender, which is the other check in Inbox besides code length
@@ -192,10 +179,7 @@ contract ArbitrumInboxAliasingWithAA is Test {
         // Using this method since "sender" in MessageDelivered seems to always be aliased.
         // This gives us the emitted "destination" according to Inbox
         vm.expectEmit(false, false, false, true);
-        emit InboxMessageDelivered(
-            0,
-            abi.encodePacked(ALICE_ADDRESS, uint256(1 ether))
-        );
+        emit InboxMessageDelivered(0, abi.encodePacked(ALICE_ADDRESS, uint256(1 ether)));
 
         // Non-delegated call but with 7702 code set
         // Second param ensures that tx.origin == msg.sender, which is the other check in Inbox besides code length
@@ -223,10 +207,7 @@ contract ArbitrumInboxAliasingWithAA is Test {
         // Using this method since "sender" in MessageDelivered seems to always be aliased.
         // This gives us the emitted "destination" according to Inbox
         vm.expectEmit(false, false, false, true);
-        emit InboxMessageDelivered(
-            0,
-            abi.encodePacked(expectedSender, uint256(1 ether))
-        );
+        emit InboxMessageDelivered(0, abi.encodePacked(expectedSender, uint256(1 ether)));
 
         // Non-delegated call but with 7702 code set
         // Second param ensures that tx.origin == msg.sender, which is the other check in Inbox besides code length
@@ -239,10 +220,7 @@ contract ArbitrumInboxAliasingWithAA is Test {
         // Our packed data here follows the depositEth() functions 'abi.encodePacked(dest, msg.value)'
         // Using this method since "sender" in MessageDelivered seems to always be aliased.
         vm.expectEmit(false, false, false, true);
-        emit InboxMessageDelivered(
-            0,
-            abi.encodePacked(expectedSender, uint256(1 ether))
-        );
+        emit InboxMessageDelivered(0, abi.encodePacked(expectedSender, uint256(1 ether)));
 
         // Non-delegated call but with 7702 code set
         // Second param ensures that tx.origin == msg.sender, which is the other check in Inbox besides code length
