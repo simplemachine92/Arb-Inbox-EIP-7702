@@ -7,10 +7,15 @@ evm_version = "prague"
 # Mainnet forking configuration
 [rpc_endpoints]
 mainnet = "${MAINNET_RPC_URL}"
+sepolia = "${SEPOLIA_RPC_URL}"
 
 # Fork configuration for testing against real Arbitrum contracts
 [profile.default.fork]
 url = "${MAINNET_RPC_URL}"
 block_number = 21000000  # Recent block for consistent testing
+
+[profile.sepolia]
+rpc_url = "${SEPOLIA_RPC_URL}"
+chain_id = 11155111
 
 # See more config options https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

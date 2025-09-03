@@ -1,0 +1,17 @@
+{
+  "name": "forge-delegate-project",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Forge project with EIP-7702 delegation support",
+  "scripts": {
+    "delegate": "node delegation/delegate.js",
+    "verify": "node delegation/delegate.js --verify-only",
+    "verify-standalone": "node delegation/verify-delegation.js",
+    "deploy-and-delegate": "forge script script/DeployDelegate.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast && npm run delegate"
+  },
+  "dependencies": {
+    "viem": "^2.21.0",
+    "dotenv": "^16.4.5"
+  },
+  "devDependencies": {}
+}
