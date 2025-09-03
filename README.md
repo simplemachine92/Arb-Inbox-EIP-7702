@@ -1,6 +1,7 @@
 # EIP-7702 + Arbitrum Inbox
 
-Shows how EIP-7702 accounts get aliased when using Arbitrum's Inbox.
+Shows how EIP-7702 code-delegated accounts get aliased when interacting with Arbitrum's Inbox.
+Also serves as an example usage of [forge EIP-7702 cheatcodes](https://getfoundry.sh/reference/cheatcodes/sign-delegation#description).
 
 ## What it does
 
