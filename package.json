@@ -7,6 +7,8 @@
     "delegate": "node delegation/delegate.js",
     "verify": "node delegation/delegate.js --verify-only",
     "verify-standalone": "node delegation/verify-delegation.js",
+    "reset": "node delegation/reset-delegation.js",
+    "reset-verify": "node delegation/reset-delegation.js --verify-only",
     "deploy-and-delegate": "forge script script/DeployDelegate.s.sol --rpc-url $SEPOLIA_RPC_URL --broadcast && npm run delegate"
   },
   "dependencies": {
