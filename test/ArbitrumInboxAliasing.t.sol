@@ -14,17 +14,8 @@ import {SimpleDelegateContract} from "../src/SimpleDelegateContract.sol";
  * @dev Showcases that aliasing occurs for accounts that have "set their code" via 7702 with multiple tx types.
  */
 contract ArbitrumInboxAliasingWithAA is Test {
-    // IBridge mimic event
-    event MessageDelivered(
-        uint256 indexed messageIndex,
-        bytes32 indexed beforeInboxAcc,
-        address inbox,
-        uint8 kind,
-        address sender,
-        bytes32 messageDataHash,
-        uint256 baseFeeL1,
-        uint64 timestamp
-    );
+    /// @dev event emitted when a inbox message is added to the Bridge's delayed accumulator
+    event InboxMessageDelivered(uint256 indexed messageNum, bytes data);
 
     // the identifiers of the forks
     uint256 mainnetFork;
@@ -96,77 +87,15 @@ contract ArbitrumInboxAliasingWithAA is Test {
         // Apply aliasing to compare emitted event
         address expectedSender = applyL1ToL2Alias(address(ALICE_ADDRESS));
 
-        // Record all logs
-        vm.recordLogs();
+        // Our packed data here follows the depositEth() functions 'abi.encodePacked(dest, msg.value)'
+        // Using this method since "sender" in MessageDelivered seems to always be aliased.
+        // This gives us the emitted "destination" according to Inbox
+        vm.expectEmit(false, false, false, true);
+        emit InboxMessageDelivered(0, abi.encodePacked(expectedSender, uint256(1 ether)));
 
-        // Non-delegated call but with 7702 code set
-        vm.prank(ALICE_ADDRESS);
+        // Second param ensures that tx.origin == msg.sender, which is the other check in Inbox besides code length
+        vm.prank(ALICE_ADDRESS, ALICE_ADDRESS);
         arbitrumInbox.depositEth{value: 1 ether}();
-
-        // Get the logs and check manually
-        Vm.Log[] memory logs = vm.getRecordedLogs();
-
-        bool found = false;
-        for (uint256 i = 0; i < logs.length; i++) {
-            // Check if this is the MessageDelivered event
-            if (
-                logs[i].topics[0]
-                    == keccak256("MessageDelivered(uint256,bytes32,address,uint8,address,bytes32,uint256,uint64)")
-            ) {
-                // Decode the data to get the sender
-                (,, address sender,,,) = abi.decode(logs[i].data, (address, uint8, address, bytes32, uint256, uint64));
-
-                // Check only the sender
-                if (sender == expectedSender) {
-                    found = true;
-                    console.log("Found event with correct sender:", sender);
-                    break;
-                }
-            }
-        }
-
-        // Assert we found the log or throw
-        assertTrue(found, "Event with expected sender not found");
-
-        // Alice technically has "code" at her address during this flow, so her address on L2 was aliased.
-        assertNotEq(ALICE_ADDRESS, expectedSender);
-
-        /* === Second Transaction to confirm forge isn't setting for single transactions === */
-
-        // Try a subsequent transaction to make sure forge isn't just doing one-offs
-        vm.deal(ALICE_ADDRESS, 1 ether);
-
-        // Trying broadcast in this second tx to see if there are any diffs in behavior.
-        vm.broadcast(ALICE_ADDRESS);
-        arbitrumInbox.depositEth{value: 1 ether}();
-
-        // Get the logs and check manually
-        Vm.Log[] memory logs2 = vm.getRecordedLogs();
-
-        bool found2 = false;
-        for (uint256 i = 0; i < logs.length; i++) {
-            // Check if this is the MessageDelivered event
-            if (
-                logs2[i].topics[0]
-                    == keccak256("MessageDelivered(uint256,bytes32,address,uint8,address,bytes32,uint256,uint64)")
-            ) {
-                // Decode the data to get the sender
-                (,, address sender,,,) = abi.decode(logs2[i].data, (address, uint8, address, bytes32, uint256, uint64));
-
-                // Check only the sender
-                if (sender == expectedSender) {
-                    found2 = true;
-                    console.log("Found event with correct sender:", sender);
-                    break;
-                }
-            }
-        }
-
-        // Assert we found the log or throw
-        assertTrue(found2, "Event with expected sender not found");
-
-        // Alice technically has "code" at her address during this flow, so her address on L2 was aliased.
-        assertNotEq(ALICE_ADDRESS, expectedSender);
     }
 
     /**
@@ -198,40 +127,87 @@ contract ArbitrumInboxAliasingWithAA is Test {
         // Apply aliasing to compare emitted event
         address expectedSender = applyL1ToL2Alias(address(ALICE_ADDRESS));
 
-        // Record all logs
-        vm.recordLogs();
+        // Our packed data here follows the depositEth() functions 'abi.encodePacked(dest, msg.value)'
+        // Using this method since "sender" in MessageDelivered seems to always be aliased.
+        // This gives us the emitted "destination" according to Inbox
+        vm.expectEmit(false, false, false, true);
+        emit InboxMessageDelivered(0, abi.encodePacked(expectedSender, uint256(1 ether)));
 
         // Call the inbox via delegated call
         // 7702: "All code executing operations must load and execute the code pointed to by the delegation."
         SimpleDelegateContract(payable(ALICE_ADDRESS)).execute(calls);
+    }
 
-        // Get the logs and check manually
-        Vm.Log[] memory logs = vm.getRecordedLogs();
+    function test_InboxCallNormalTransferWithoutCodeSet() public {
+        // Shows normal inbox functionality, acting as our "control"
 
-        bool found = false;
-        for (uint256 i = 0; i < logs.length; i++) {
-            // Check if this is the MessageDelivered event
-            if (
-                logs[i].topics[0]
-                    == keccak256("MessageDelivered(uint256,bytes32,address,uint8,address,bytes32,uint256,uint64)")
-            ) {
-                // Decode the data to get the sender
-                (,, address sender,,,) = abi.decode(logs[i].data, (address, uint8, address, bytes32, uint256, uint64));
+        // Setup to broadcast the delegated call
+        vm.deal(ALICE_ADDRESS, 1 ether);
 
-                // Check only the sender
-                if (sender == expectedSender) {
-                    found = true;
-                    console.log("Found event with correct sender:", sender);
-                    break;
-                }
-            }
-        }
+        // Our packed data here follows the depositEth() functions 'abi.encodePacked(dest, msg.value)'
+        // Using this method since "sender" in MessageDelivered seems to always be aliased.
+        vm.expectEmit(false, false, false, true);
+        emit InboxMessageDelivered(0, abi.encodePacked(ALICE_ADDRESS, uint256(1 ether)));
 
-        // Assert we found the log or throw
-        assertTrue(found, "Event with expected sender not found");
+        // Non-delegated call but with 7702 code set
+        // Second param ensures that tx.origin == msg.sender, which is the other check in Inbox besides code length
+        vm.prank(ALICE_ADDRESS, ALICE_ADDRESS);
+        arbitrumInbox.depositEth{value: 1 ether}();
+    }
 
-        // Alice technically has "code" at her address during this flow, so her address on L2 was aliased.
-        assertNotEq(ALICE_ADDRESS, expectedSender);
+    function test_InboxCallNormalTransferWithoutCodeSetButSigned() public {
+        // Signs the delegation but doesn't attach it- Another control.
+        // Shows the distinction between how forge handles creating a delegation, and creates another tx under the hood to fully delegate.
+        vm.signDelegation(address(implementation), ALICE_PK);
+
+        // Setup to broadcast the delegated call
+        vm.deal(ALICE_ADDRESS, 1 ether);
+
+        // Our packed data here follows the depositEth() functions 'abi.encodePacked(dest, msg.value)'
+        // Using this method since "sender" in MessageDelivered seems to always be aliased.
+        // This gives us the emitted "destination" according to Inbox
+        vm.expectEmit(false, false, false, true);
+        emit InboxMessageDelivered(0, abi.encodePacked(ALICE_ADDRESS, uint256(1 ether)));
+
+        // Non-delegated call but with 7702 code set
+        // Second param ensures that tx.origin == msg.sender, which is the other check in Inbox besides code length
+        vm.prank(ALICE_ADDRESS, ALICE_ADDRESS);
+        arbitrumInbox.depositEth{value: 1 ether}();
+    }
+
+    function test_InboxCallSubsequent7702Calls() public {
+        // Attach our signed delegation via their under the hood tx to do so. (attach)
+        vm.signAndAttachDelegation(address(implementation), ALICE_PK);
+
+        // Apply aliasing to compare emitted event
+        address expectedSender = applyL1ToL2Alias(address(ALICE_ADDRESS));
+
+        // Setup to broadcast the delegated call
+        vm.deal(ALICE_ADDRESS, 1 ether);
+
+        // Our packed data here follows the depositEth() functions 'abi.encodePacked(dest, msg.value)'
+        // Using this method since "sender" in MessageDelivered seems to always be aliased.
+        // This gives us the emitted "destination" according to Inbox
+        vm.expectEmit(false, false, false, true);
+        emit InboxMessageDelivered(0, abi.encodePacked(expectedSender, uint256(1 ether)));
+
+        // Non-delegated call but with 7702 code set
+        // Second param ensures that tx.origin == msg.sender, which is the other check in Inbox besides code length
+        vm.prank(ALICE_ADDRESS, ALICE_ADDRESS);
+        arbitrumInbox.depositEth{value: 1 ether}();
+
+        // === Second Transaction ===
+        vm.deal(ALICE_ADDRESS, 1 ether);
+
+        // Our packed data here follows the depositEth() functions 'abi.encodePacked(dest, msg.value)'
+        // Using this method since "sender" in MessageDelivered seems to always be aliased.
+        vm.expectEmit(false, false, false, true);
+        emit InboxMessageDelivered(0, abi.encodePacked(expectedSender, uint256(1 ether)));
+
+        // Non-delegated call but with 7702 code set
+        // Second param ensures that tx.origin == msg.sender, which is the other check in Inbox besides code length
+        vm.prank(ALICE_ADDRESS, ALICE_ADDRESS);
+        arbitrumInbox.depositEth{value: 1 ether}();
     }
 
     /**
