@@ -228,6 +228,42 @@ contract ArbitrumInboxAliasingWithAA is Test {
         arbitrumInbox.depositEth{value: 1 ether}();
     }
 
+    function test_InboxCallsWithResetDelegation() public {
+        // Attach our signed delegation via their under the hood tx to do so. (attach)
+        vm.signAndAttachDelegation(address(implementation), ALICE_PK);
+
+        // Apply aliasing to compare emitted event
+        address expectedSender = applyL1ToL2Alias(address(ALICE_ADDRESS));
+
+        // Setup to broadcast the delegated call
+        vm.deal(ALICE_ADDRESS, 1 ether);
+
+        // Our packed data here follows the depositEth() functions 'abi.encodePacked(dest, msg.value)'
+        // Using this method since "sender" in MessageDelivered seems to always be aliased.
+        // This gives us the emitted "destination" according to Inbox
+        vm.expectEmit(false, false, false, true);
+        emit InboxMessageDelivered(0, abi.encodePacked(expectedSender, uint256(1 ether)));
+
+        vm.prank(ALICE_ADDRESS, ALICE_ADDRESS);
+        arbitrumInbox.depositEth{value: 1 ether}();
+        vm.deal(ALICE_ADDRESS, 1 ether);
+
+        // === Second Transaction ===
+        // No code set transaction.
+        // Alice signs and attaches the delegation to reset her code to empty code hash
+        vm.signAndAttachDelegation(address(0x0000000000000000000000000000000000000000), ALICE_PK);
+
+        // Our packed data here follows the depositEth() functions 'abi.encodePacked(dest, msg.value)'
+        // Using this method since "sender" in MessageDelivered seems to always be aliased.
+        // Correctly shows non-aliased address as ALICE_ADDRESS in emitted event
+        vm.expectEmit(false, false, false, true);
+        emit InboxMessageDelivered(0, abi.encodePacked(ALICE_ADDRESS, uint256(1 ether)));
+
+        // Second param ensures that tx.origin == msg.sender, which is the other check in Inbox besides code length
+        vm.prank(ALICE_ADDRESS, ALICE_ADDRESS);
+        arbitrumInbox.depositEth{value: 1 ether}();
+    }
+
     /**
      * @notice Apply L1 to L2 address aliasing using Arbitrum's standard formula
      * @dev Implements Arbitrum's address aliasing mechanism by adding a fixed offset to the L1 address.
