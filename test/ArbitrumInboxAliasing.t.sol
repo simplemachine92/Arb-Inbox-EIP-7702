@@ -138,7 +138,13 @@ contract ArbitrumInboxAliasingWithAA is Test {
         SimpleDelegateContract(payable(ALICE_ADDRESS)).execute(calls);
     }
 
-    function test_InboxCallNormalTransferWithoutCodeSet() public {
+    /**
+     * @notice Tests normal EOA behavior without EIP-7702 code delegation (control test)
+     * @dev Demonstrates baseline behavior where Alice's EOA address is NOT aliased when depositing ETH.
+     *      This serves as a control test to compare against EIP-7702 enabled accounts.
+     *      Verifies that without code delegation, the original address is preserved in the inbox message.
+     */
+    function test_InboxCallControl() public {
         // Shows normal inbox functionality, acting as our "control"
 
         // Setup to broadcast the delegated call
@@ -155,7 +161,13 @@ contract ArbitrumInboxAliasingWithAA is Test {
         arbitrumInbox.depositEth{value: 1 ether}();
     }
 
-    function test_InboxCallNormalTransferWithoutCodeSetButSigned() public {
+    /**
+     * @notice Tests EOA behavior with signed but not attached EIP-7702 delegation (control test)
+     * @dev Demonstrates that signing a delegation without attaching it does not affect address aliasing.
+     *      Shows the distinction between signing and attaching delegations in Forge's EIP-7702 implementation.
+     *      Verifies that Alice's address remains unaliased since the delegation is only signed, not attached.
+     */
+    function test_InboxCallSignedControl() public {
         // Signs the delegation but doesn't attach it- Another control.
         // Shows the distinction between how forge handles creating a delegation, and creates another tx under the hood to fully delegate.
         vm.signDelegation(address(implementation), ALICE_PK);
@@ -175,6 +187,12 @@ contract ArbitrumInboxAliasingWithAA is Test {
         arbitrumInbox.depositEth{value: 1 ether}();
     }
 
+    /**
+     * @notice Tests persistent aliasing behavior across multiple transactions with EIP-7702 code delegation
+     * @dev Demonstrates that once an EOA has attached EIP-7702 delegation, the aliasing behavior persists
+     *      across subsequent transactions, even for normal (non-delegated) calls.
+     *      Verifies that Alice's address remains delegated to the code specified.
+     */
     function test_InboxCallSubsequent7702Calls() public {
         // Attach our signed delegation via their under the hood tx to do so. (attach)
         vm.signAndAttachDelegation(address(implementation), ALICE_PK);
@@ -211,7 +229,11 @@ contract ArbitrumInboxAliasingWithAA is Test {
     }
 
     /**
-     * @notice Apply L1 to L2 address aliasing (Arbitrum's formula)
+     * @notice Apply L1 to L2 address aliasing using Arbitrum's standard formula
+     * @dev Implements Arbitrum's address aliasing mechanism by adding a fixed offset to the L1 address.
+     *      This is used to prevent address collisions between L1 and L2 when contracts interact cross-chain.
+     * @param l1Address The original L1 address to be aliased
+     * @return The aliased L2 address after applying the offset
      */
     function applyL1ToL2Alias(address l1Address) public pure returns (address) {
         uint160 offset = uint160(0x1111000000000000000000000000000000001111);
@@ -221,7 +243,10 @@ contract ArbitrumInboxAliasingWithAA is Test {
     }
 
     /**
-     * @notice Helper to check if string is empty
+     * @notice Helper function to check if a string is empty
+     * @dev Utility function that checks string length by converting to bytes and checking length
+     * @param str The string to check for emptiness
+     * @return True if the string is empty (zero length), false otherwise
      */
     function _isEmptyString(string memory str) internal pure returns (bool) {
         return bytes(str).length == 0;
